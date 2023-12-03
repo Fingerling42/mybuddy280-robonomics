@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>mybuddy240_interfaces</name>
+  <name>mybuddy280_interfaces</name>
   <version>0.0.1</version>
   <description>Description of all message/services types for myBuddy 280 two-arm manipulator, credits to Elephant Robotics.</description>
   <maintainer email="berman@robonomics.network">Ivan Berman</maintainer>
-  <license>BSD-2-Clause</license>
+  <license>Apache-2.0</license>
 
   <!-- Dependencies for tool that is executed during the build process -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!-- Dependencies for interface generation executed during the build process -->
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
