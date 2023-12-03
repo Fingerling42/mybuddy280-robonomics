@@ -42,7 +42,8 @@ class MyBuddy280ROSWrapper(Node):
 
         angles_msg.left_arm.velocity = []
         angles_msg.left_arm.effort = []
-        angles_msg.left_arm.position = self.mc.get_angles(1)
+        angles = self.mc.get_angles(1)
+        angles_msg.left_arm.position = [float(position) for position in angles]
         angles_msg.left_arm.header.stamp = self.get_clock().now().to_msg()
 
         angles_msg.right_arm.name = [
@@ -56,7 +57,8 @@ class MyBuddy280ROSWrapper(Node):
 
         angles_msg.right_arm.velocity = []
         angles_msg.right_arm.effort = []
-        angles_msg.right_arm.position = self.mc.get_angles(2)
+        angles = self.mc.get_angles(2)
+        angles_msg.right_arm.position = [float(position) for position in angles]
         angles_msg.right_arm.header.stamp = self.get_clock().now().to_msg()
 
         angles_msg.waist.name = [
@@ -65,7 +67,7 @@ class MyBuddy280ROSWrapper(Node):
 
         angles_msg.waist.velocity = []
         angles_msg.waist.effort = []
-        angles_msg.waist.position = self.mc.get_angle(3, 1)
+        angles_msg.waist.position = float(self.mc.get_angle(3, 1))
         angles_msg.waist.header.stamp = self.get_clock().now().to_msg()
 
         self.publisher_angles.publish(angles_msg)
