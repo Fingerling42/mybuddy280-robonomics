@@ -1,0 +1,3 @@
+geometry_msgs/PoseArray left_arm
+geometry_msgs/PoseArray right_arm
+geometry_msgs/Pose waist
