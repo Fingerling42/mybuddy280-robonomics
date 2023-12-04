@@ -3,6 +3,7 @@ from rclpy.node import Node
 from pymycobot.mybuddy import MyBuddy
 
 from mybuddy280_interfaces.msg import MyBuddy280Angles
+from mybuddy280_interfaces.srv import MyBuddy280GetAngle
 
 SERIAL_PORT = "/dev/ttyAMA0"
 BAUD_RATE = 115200
@@ -23,13 +24,26 @@ class MyBuddy280ROSWrapper(Node):
         self.mc = MyBuddy(SERIAL_PORT, BAUD_RATE)
 
         # Publisher node of joint states (position)
-        self.publisher_joint_state = self.create_publisher(MyBuddy280Angles, 'myBuddy280/joints/angles', 10)
-        self.timer_state = self.create_timer(0.5, self.joint_state_callback)  # 0.5 sec for msg
+        self.publisher_joint_state = self.create_publisher(
+            MyBuddy280Angles,
+            'myBuddy280/joints/angles',
+            10
+        )
+        self.timer_state = self.create_timer(
+            0.5,
+            self.joint_state_callback
+        )  # 0.5 sec for msg
+
+        # Service for sending angles to joints
+        self.srv_send_joint_angle = self.create_service(
+            MyBuddy280GetAngle,
+            'myBuddy280/send_joint_angle',
+            self.send_joint_angle_callback
+        )
 
     def joint_state_callback(self):
         """
         Get states of all joints
-        :return: MyBuddy280Angles
         """
         state_msg = MyBuddy280Angles()
 
@@ -74,6 +88,35 @@ class MyBuddy280ROSWrapper(Node):
         state_msg.waist.header.stamp = self.get_clock().now().to_msg()
 
         self.publisher_joint_state.publish(state_msg)
+
+    def send_joint_angle_callback(self, request, response):
+        """
+        Send angles to the robot
+        :param request: part_id ('L' for left arm, 'R' for right arm, 'W' for waist)
+                        joint_number[] --- 1 to 6
+                        angle[] --- -165 — 165 (-175 — 175 for J6) degrees
+                        speed[] --- joint speed 1 - 100
+        :param response: status message
+        :return: response
+        """
+        self.get_logger().info('Request for sending command to %s robot part' % request.part_id)
+        if request.part_id == 'L':
+            part_id = 1
+        elif request.part_id == 'R':
+            part_id = 2
+        elif request.part_id == 'W':
+            part_id = 3
+        else:
+            response.result = "Error: Wrong ID of robot part, use only L, R or W"
+            return response
+
+        i = 0
+        for joint_number in request.joint_number:
+            self.mc.send_angle(part_id, joint_number, request.angle[i], request.speed[i])
+            i += 1
+
+        response.result = "Success: Angles sent"
+        return response
 
 
 def main(args=None):

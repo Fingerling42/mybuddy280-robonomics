@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MyBuddy280Coords.msg"
   "msg/MyBuddy280GripperStatus.msg"
   "msg/MyBuddy280PumpStatus.msg"
+  "srv/MyBuddy280GetAngle.srv"
   DEPENDENCIES sensor_msgs geometry_msgs
  )
 ament_export_dependencies(rosidl_default_runtime)

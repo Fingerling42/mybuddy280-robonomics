@@ -1,0 +1,6 @@
+string          part_id
+int8[<=6]       joint_number
+float64[<=6]    angle
+int8[<=6]       speed
+---
+string          result
