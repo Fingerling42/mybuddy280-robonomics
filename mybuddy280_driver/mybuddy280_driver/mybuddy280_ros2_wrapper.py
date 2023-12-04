@@ -7,31 +7,34 @@ from mybuddy280_interfaces.msg import MyBuddy280Angles
 SERIAL_PORT = "/dev/ttyAMA0"
 BAUD_RATE = 115200
 
+
 class MyBuddy280ROSWrapper(Node):
     """
-    A class that wraps pymycobot functions of the myBuddy 280 two-handed robot to ROS 2
+    A class that wraps pymycobot functions of the myBuddy280 to ROS 2
     """
 
     def __init__(self):
         """
-        Init communication with robot and simple publisher
+        Init communication with robot and all publisher / subscriber and services
         """
         super().__init__("mybuddy280_ros2_wrapper")
 
+        # Start connecting to robot
         self.mc = MyBuddy(SERIAL_PORT, BAUD_RATE)
 
-        self.publisher_angles = self.create_publisher(MyBuddy280Angles, 'myBuddy280/joints/angles', 10)
-        timer_period = 0.5  # seconds
-        self.timer = self.create_timer(timer_period, self.get_angles)
+        # Publisher node of joint states (position)
+        self.publisher_joint_state = self.create_publisher(MyBuddy280Angles, 'myBuddy280/joints/angles', 10)
+        self.timer_state = self.create_timer(0.5, self.joint_state_callback)  # 0.5 sec for msg
 
-    def get_angles(self):
+    def joint_state_callback(self):
         """
-        Get angles of all joints
+        Get states of all joints
         :return: MyBuddy280Angles
         """
-        angles_msg = MyBuddy280Angles()
+        state_msg = MyBuddy280Angles()
 
-        angles_msg.left_arm.name = [
+        # Left arm state
+        state_msg.left_arm.name = [
             "LJ1",
             "LJ2",
             "LJ3",
@@ -39,14 +42,14 @@ class MyBuddy280ROSWrapper(Node):
             "LJ5",
             "LJ6",
         ]
-
-        angles_msg.left_arm.velocity = []
-        angles_msg.left_arm.effort = []
+        state_msg.left_arm.velocity = []
+        state_msg.left_arm.effort = []
         angles = self.mc.get_angles(1)
-        angles_msg.left_arm.position = [float(position) for position in angles]
-        angles_msg.left_arm.header.stamp = self.get_clock().now().to_msg()
+        state_msg.left_arm.position = [float(position) for position in angles]
+        state_msg.left_arm.header.stamp = self.get_clock().now().to_msg()
 
-        angles_msg.right_arm.name = [
+        # Right arm state
+        state_msg.right_arm.name = [
             "RJ1",
             "RJ2",
             "RJ3",
@@ -54,23 +57,23 @@ class MyBuddy280ROSWrapper(Node):
             "RJ5",
             "RJ6",
         ]
-
-        angles_msg.right_arm.velocity = []
-        angles_msg.right_arm.effort = []
+        state_msg.right_arm.velocity = []
+        state_msg.right_arm.effort = []
         angles = self.mc.get_angles(2)
-        angles_msg.right_arm.position = [float(position) for position in angles]
-        angles_msg.right_arm.header.stamp = self.get_clock().now().to_msg()
+        state_msg.right_arm.position = [float(position) for position in angles]
+        state_msg.right_arm.header.stamp = self.get_clock().now().to_msg()
 
-        angles_msg.waist.name = [
+        # Waist state
+        state_msg.waist.name = [
             "W"
         ]
-        angles_msg.waist.velocity = []
-        angles_msg.waist.effort = []
+        state_msg.waist.velocity = []
+        state_msg.waist.effort = []
         angles = float(self.mc.get_angle(3, 1))
-        angles_msg.waist.position.append(angles)
-        angles_msg.waist.header.stamp = self.get_clock().now().to_msg()
+        state_msg.waist.position.append(angles)
+        state_msg.waist.header.stamp = self.get_clock().now().to_msg()
 
-        self.publisher_angles.publish(angles_msg)
+        self.publisher_joint_state.publish(state_msg)
 
 
 def main(args=None):
