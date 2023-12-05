@@ -91,7 +91,7 @@ class MyBuddy280ROSWrapper(Node):
 
     def send_joint_angle_callback(self, request, response):
         """
-        Send angles to the robot
+        Send angles to the one of robot's part
         :param request: part_id ('L' for left arm, 'R' for right arm, 'W' for waist)
                         joint_number[] --- 1 to 6
                         angle[] --- -165 — 165 (-175 — 175 for J6) degrees
@@ -112,8 +112,20 @@ class MyBuddy280ROSWrapper(Node):
 
         i = 0
         for joint_number in request.joint_number:
-            self.mc.send_angle(part_id, joint_number, request.angle[i], request.speed[i])
-            i += 1
+            if joint_number in [1, 2, 3, 4, 5, 6]:
+                if -175.0 <= request.angle[i] <= 175.0:
+                    if 1 <= request.speed[i] <= 100:
+                        self.mc.send_angle(part_id, joint_number, request.angle[i], request.speed[i])
+                        i += 1
+                    else:
+                        response.result = "Error: Speed is out of range (1 .. 100)"
+                        return response
+                else:
+                    response.result = "Error: Angle is out of range (-175 .. 175)"
+                    return response
+            else:
+                response.result = "Error: Wrong joint number (only 1 .. 6)"
+                return response
 
         response.result = "Success: Angles sent"
         return response
