@@ -13,12 +13,20 @@ def generate_launch_description():
         'account_params.yaml'
     )
 
-    # Creating node with params from config
+    # Creating node for sender with params from config
     sender_node = Node(
         package='robonomics_ros2_pubsub',
         executable='robonomics_ros2_sender',
         parameters=[config]
     )
+
+    # Creating node for receiver
+    receiver_node = Node(
+        package='robonomics_ros2_pubsub',
+        executable='robonomics_ros2_receiver'
+    )
+
     # Add node to launching
     ld.add_action(sender_node)
+    ld.add_action(receiver_node)
     return ld

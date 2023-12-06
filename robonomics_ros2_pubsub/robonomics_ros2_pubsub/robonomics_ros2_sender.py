@@ -6,6 +6,7 @@ from std_msgs.msg import String
 from robonomicsinterface import Account, Datalog
 from substrateinterface import KeypairType
 
+
 class RobonomicsROS2Sender(Node):
 
     def __init__(self):
@@ -51,8 +52,7 @@ class RobonomicsROS2Sender(Node):
         :param msg: String
         :return: None
         """
-        data = msg.data
-        self.datalog.record(data)
+        self.datalog.record(msg.data)
         self.get_logger().info('Sent msg to datalog: %s' % msg.data)
 
 

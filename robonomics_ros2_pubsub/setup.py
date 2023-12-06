@@ -24,7 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'robonomics_ros2_sender = robonomics_ros2_pubsub.robonomics_ros2_sender:main'
+            'robonomics_ros2_sender = robonomics_ros2_pubsub.robonomics_ros2_sender:main',
+            'robonomics_ros2_receiver = robonomics_ros2_pubsub.robonomics_ros2_receiver:main'
         ],
     },
 )
