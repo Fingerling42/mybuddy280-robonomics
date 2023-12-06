@@ -23,7 +23,8 @@ def generate_launch_description():
     # Creating node for receiver
     receiver_node = Node(
         package='robonomics_ros2_pubsub',
-        executable='robonomics_ros2_receiver'
+        executable='robonomics_ros2_receiver',
+        parameters=[config]
     )
 
     # Add node to launching
