@@ -3,7 +3,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import String
 
-from robonomicsinterface import Account, Datalog
+from robonomicsinterface import Account, Datalog, Launch
 from substrateinterface import KeypairType
 
 
@@ -24,14 +24,6 @@ class RobonomicsROS2Sender(Node):
             ]
         )
 
-        # Create subscription to topic
-        self.subscription = self.create_subscription(
-            String,
-            'robonomics/to/datalog',
-            self.send_to_robonomics_callback,
-            10)
-        self.subscription
-
         # Get used parameters for account creation
         account_seed = self.get_parameter('seed')
         account_type = self.get_parameter('crypto_type')
@@ -44,16 +36,69 @@ class RobonomicsROS2Sender(Node):
         else:
             crypto_type = -1
         self.account = Account(seed=account_seed.value, crypto_type=crypto_type)
-        self.datalog = Datalog(self.account)
 
-    def send_to_robonomics_callback(self, msg):
+        # Create subscription to topic for datalog
+        self.datalog = Datalog(self.account)
+        self.subscription_datalog = self.create_subscription(
+            String,
+            'robonomics/to/datalog',
+            self.datalog_sender_callback,
+            10
+        )
+        self.subscription_datalog
+
+        # Create subscription to topic with sub_address
+        self.sub_account_address = ''
+        self.ros2_subscription = self.create_subscription(
+            String,
+            'robonomics/launch_address',
+            self.robonomics_address_callback,
+            10)
+        self.ros2_subscription
+
+        # Create subscription to topic for launch param
+        self.launch = Launch(self.account)
+        self.subscription_launch_param = self.create_subscription(
+            String,
+            'robonomics/to/launch_param/ipfs',
+            self.launch_sender_callback,
+            10
+        )
+        self.subscription_launch_param
+
+    def robonomics_address_callback(self, msg):
         """
-        Method that happened if the msg appears in topic
+        Method for getting address of Robonomics account
         :param msg: String
+        :return: None
+        """
+        self.sub_account_address = msg.data
+        self.get_logger().info('Received datalog address: %s' % self.sub_account_address)
+
+    def datalog_sender_callback(self, msg):
+        """
+        Method that happened if the msg appears in topic for datalog
+        :param msg: String with datalog
         :return: None
         """
         self.datalog.record(msg.data)
         self.get_logger().info('Sent msg to datalog: %s' % msg.data)
+
+    def launch_sender_callback(self, msg):
+        """
+        Method that happened if the msg appears in topic for launch param
+        :param msg: String with launch param
+        :return: None
+        """
+        msg_param = msg.data
+        if msg_param.startswith("Qm"):
+            self.launch.launch(
+                self.sub_account_address,
+                msg_param
+            )
+            self.get_logger().info('Sent launch to %s with param: %s' % (self.sub_account_address, msg_param))
+        else:
+            self.get_logger().warn("Only IPFS hashed accepted as param for launch")
 
 
 def main(args=None):

@@ -4,6 +4,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from robonomicsinterface import Account, Datalog, Subscriber, SubEvent
+from robonomicsinterface.utils import ipfs_32_bytes_to_qm_hash
 from substrateinterface import KeypairType
 
 
@@ -72,7 +73,7 @@ class RobonomicsROS2Receiver(Node):
         # Publisher of launch param
         self.launch_publisher = self.create_publisher(
             String,
-            'robonomics/from/launch_param',
+            'robonomics/from/launch_param/ipfs',
             10
         )
 
@@ -83,7 +84,7 @@ class RobonomicsROS2Receiver(Node):
         :return: None
         """
         self.sub_account_address = msg.data
-        self.get_logger().info('Received datalog address: %s' % self.sub_account_address)
+        self.get_logger().info('Received launch address: %s' % self.sub_account_address)
 
     def datalog_receiver_callback(self):
         """
@@ -103,7 +104,7 @@ class RobonomicsROS2Receiver(Node):
         """
         launching_account_address = raw_data[0]
         launch_param_msg = String()
-        launch_param_msg.data = raw_data[2]
+        launch_param_msg.data = ipfs_32_bytes_to_qm_hash(raw_data[2])
         self.get_logger().info("Getting launch from %s with param: %s" % (
             launching_account_address, launch_param_msg.data)
                                )
