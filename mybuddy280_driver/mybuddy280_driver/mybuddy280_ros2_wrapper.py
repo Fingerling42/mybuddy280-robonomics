@@ -3,7 +3,7 @@ from rclpy.node import Node
 from pymycobot.mybuddy import MyBuddy
 
 from mybuddy280_interfaces.msg import MyBuddy280Angles
-from mybuddy280_interfaces.srv import MyBuddy280GetAngle
+from mybuddy280_interfaces.srv import MyBuddy280SendAngles
 
 SERIAL_PORT = "/dev/ttyAMA0"
 BAUD_RATE = 115200
@@ -36,9 +36,9 @@ class MyBuddy280ROSWrapper(Node):
 
         # Service for sending angles to joints
         self.srv_send_joint_angle = self.create_service(
-            MyBuddy280GetAngle,
-            'myBuddy280/send_joint_angle',
-            self.send_joint_angle_callback
+            MyBuddy280SendAngles,
+            'myBuddy280/send_joint_angles',
+            self.send_joint_angles_callback
         )
 
     def joint_state_callback(self):
@@ -89,7 +89,7 @@ class MyBuddy280ROSWrapper(Node):
 
         self.publisher_joint_state.publish(state_msg)
 
-    def send_joint_angle_callback(self, request, response):
+    def send_joint_angles_callback(self, request, response):
         """
         Send angles to the one of robot's part
         :param request: part_id ('L' for left arm, 'R' for right arm, 'W' for waist)
