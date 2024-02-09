@@ -1,6 +1,6 @@
-string          part_id
-int8[<=6]       joint_number
-float64[<=6]    angle
-int8[<=6]       speed
+string          part_id         # 'L' for left arm, 'R' for right arm, 'W' for waist
+int8[<=6]       joint_number    # from 1 to 6
+float64[<=6]    angle           # -165 — 165 (-175 — 175 for J6) degrees
+int8[<=6]       speed           # joint speed 1 - 100
 ---
 string          result
