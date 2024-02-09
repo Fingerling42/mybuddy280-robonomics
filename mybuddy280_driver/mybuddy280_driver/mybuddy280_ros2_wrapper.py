@@ -1,3 +1,5 @@
+import serial
+
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
@@ -23,7 +25,12 @@ class MyBuddy280ROSWrapper(Node):
         super().__init__("mybuddy280_ros2_wrapper")
 
         # Start connecting to robot
-        self.mc = MyBuddy(SERIAL_PORT, BAUD_RATE)
+        try:
+            self.mc = MyBuddy(SERIAL_PORT, BAUD_RATE)
+        except serial.serialutil.SerialException:
+            self.get_logger().error("Serial port not found")
+            self.executor.remove_node(self)
+            rclpy.shutdown()
 
         # Publisher node of joint states (position)
         self.publisher_joint_state = self.create_publisher(
