@@ -3,6 +3,7 @@ import serial
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.qos import qos_profile_sensor_data
 
 from pymycobot.mybuddy import MyBuddy
 
@@ -27,6 +28,7 @@ class MyBuddy280ROSWrapper(Node):
         # Start connecting to robot
         try:
             self.mc = MyBuddy(SERIAL_PORT, BAUD_RATE)
+            self.get_logger().info("Serial port is successfully found")
         except serial.serialutil.SerialException:
             self.get_logger().error("Serial port not found")
             self.executor.remove_node(self)
@@ -36,7 +38,7 @@ class MyBuddy280ROSWrapper(Node):
         self.publisher_joint_state = self.create_publisher(
             MyBuddy280Angles,
             'myBuddy280/joints/angles',
-            10
+            qos_profile=qos_profile_sensor_data,
         )
         self.timer_state = self.create_timer(
             0.5,
