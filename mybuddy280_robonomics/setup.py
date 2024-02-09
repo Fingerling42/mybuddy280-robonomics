@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'mybuddy280_robonomics_handler = mybuddy280_robonomics.mybuddy280_robonomics_handler:main',
         ],
     },
 )

@@ -9,6 +9,7 @@
 
   <!-- Dependencies -->
   <depend>rclpy</depend>
+  <depend>std_msgs</depend>
   <depend>mybuddy280_driver</depend>
   <depend>mybuddy280_interfaces</depend>
   <depend>robonomics_ros2_interfaces</depend>
