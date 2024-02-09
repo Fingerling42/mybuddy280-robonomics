@@ -23,14 +23,16 @@ class MyBuddy280Robonomics(Node):
         """
         super().__init__('mybuddy280_robonomics_handler')
 
+        # Names of files and core IPFS dir
         self.joints_angles_file_name = 'mybuddy280_joints_angles.json'
         self.ipfs_dir = 'ipfs_files'
 
-        # Callback group that prohibits async calls of callback functions
+        # Callback groups that prohibits async calls of callback functions
         subscriber_callback_group = MutuallyExclusiveCallbackGroup()
+        client_callback_group = MutuallyExclusiveCallbackGroup()
+        timer_callback_group = MutuallyExclusiveCallbackGroup()
 
-        # Subscription for myBuddy280 joint angles data (indicated callback group that cannot being executed
-        # in parallel to avoid deadlocks)
+        # Subscription for myBuddy280 joint angles data
         self.mybuddy280_joints_angles = MyBuddy280Angles()
         self.subscriber_joints_angles = self.create_subscription(
             MyBuddy280Angles,
@@ -41,20 +43,16 @@ class MyBuddy280Robonomics(Node):
         )
         self.subscriber_joints_angles  # prevent unused variable warning
 
-        # Callback group that prohibits async calls of callback functions
-        client_callback_group = MutuallyExclusiveCallbackGroup()
-        # Creating service clients for IPFS handler (indicated callback group that cannot being executed
-        # in parallel to avoid deadlocks)
-
+        # Creating service clients for IPFS handler
         self.ipfs_upload_client = self.create_client(
             UploadToIPFS,
             'ipfs/upload',
             callback_group=client_callback_group,
         )
-        # Wait for availability of IPFS service
         while not self.ipfs_upload_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('IPFS handler service not available, waiting again...')
 
+        # Client for sending datalogs
         self.send_datalog_client = self.create_client(
             RobonomicsROS2SendDatalog,
             'robonomics/send_datalog',
@@ -71,7 +69,6 @@ class MyBuddy280Robonomics(Node):
             self.get_logger().warn('myBuddy 280 service for sending angles is not available, waiting again...')
 
         # Timer for publishing datalogs with joint angles
-        timer_callback_group = MutuallyExclusiveCallbackGroup()
         self.timer_joints_angles = self.create_timer(
             60,
             self.timer_joints_angles_callback,
@@ -80,8 +77,8 @@ class MyBuddy280Robonomics(Node):
 
     def subscriber_joints_angles_callback(self, msg):
         """
-        Method for receiving pose msgs from turtlesim
-        :param msg: msg with turtlesim/msg/Pose type
+        Method for receiving joints angles msgs from robot
+        :param msg: msg with mybuddy280_interfaces/msg/MyBuddy280Angles type
         :return: None
         """
         self.mybuddy280_joints_angles = msg
@@ -120,6 +117,8 @@ class MyBuddy280Robonomics(Node):
         # Preparing file
         file = open(get_package_share_directory('ipfs_handler') + "/" + self.ipfs_dir
                     + "/" + self.joints_angles_file_name, 'w')
+
+        # Fill JSON dict with robot data
         data = {
             'timestamp': float(self.mybuddy280_joints_angles.left_arm.header.stamp.sec +
                                self.mybuddy280_joints_angles.left_arm.header.stamp.nanosec * pow(10, -9)),
@@ -141,6 +140,8 @@ class MyBuddy280Robonomics(Node):
             },
             'waist': self.mybuddy280_joints_angles.waist.position[0],
         }
+
+        # Save the JSON file
         json_object = json.dumps(data, indent=4)
         file.write(json_object)
         file.close()
@@ -148,7 +149,7 @@ class MyBuddy280Robonomics(Node):
         # Upload file to IPFS
         response_ipfs = self.ipfs_upload_request(self.joints_angles_file_name)
 
-        # Sending datalog
+        # Send datalog
         response_datalog = self.send_datalog_request(response_ipfs.cid)
         self.get_logger().info(response_datalog.result)
 
