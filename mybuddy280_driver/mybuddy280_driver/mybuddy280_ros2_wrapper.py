@@ -1,5 +1,7 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+
 from pymycobot.mybuddy import MyBuddy
 
 from mybuddy280_interfaces.msg import MyBuddy280Angles
@@ -130,16 +132,35 @@ class MyBuddy280ROSWrapper(Node):
         response.result = "Success: Angles sent"
         return response
 
+    def __enter__(self):
+        """
+        Enter the object runtime context
+        :return: object itself
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the object runtime context
+        :param exc_type: exception that caused the context to be exited
+        :param exc_val: exception value
+        :param exc_tb: exception traceback
+        :return: None
+        """
+
 
 def main(args=None):
     rclpy.init(args=args)
 
-    mybuddy280_ros_wrapper = MyBuddy280ROSWrapper()
+    executor = MultiThreadedExecutor()
 
-    rclpy.spin(mybuddy280_ros_wrapper)
-
-    mybuddy280_ros_wrapper.destroy_node()
-    rclpy.shutdown()
+    with MyBuddy280ROSWrapper() as mybuddy280_ros_wrapper:
+        try:
+            executor.add_node(mybuddy280_ros_wrapper)
+            executor.spin()
+        except KeyboardInterrupt:
+            mybuddy280_ros_wrapper.get_logger().warn("Killing the myBuddy wrapper node...")
+            executor.remove_node(mybuddy280_ros_wrapper)
 
 
 if __name__ == '__main__':
