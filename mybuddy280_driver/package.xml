@@ -7,13 +7,10 @@
   <maintainer email="berman@robonomics.network">Ivan Berman</maintainer>
   <license>Apache-2.0</license>
 
-  <!-- Dependencies for node generation executed during the build process -->
-  <build_depend>rclpy</build_depend>
-  <build_export_depend>mycobot_interfaces</build_export_depend>
-
-  <!-- Dependencies that are needed at execution-time  -->
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>mycobot_interfaces</exec_depend>
+  <!-- Dependencies -->
+  <depend>rclpy</depend>
+  <depend>mycobot_interfaces</depend>
+  <depend>mybuddy280_interfaces</depend>
 
   <!-- Dependencies for unit tests -->
   <test_depend>ament_copyright</test_depend>
