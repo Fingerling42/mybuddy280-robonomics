@@ -12,7 +12,6 @@ from mybuddy280_interfaces.srv import MyBuddy280SendAngles
 from robonomics_ros2_interfaces.srv import DownloadFromIPFS, UploadToIPFS, RobonomicsROS2SendDatalog
 
 import json
-import time
 
 
 class MyBuddy280Robonomics(Node):
@@ -24,6 +23,7 @@ class MyBuddy280Robonomics(Node):
         super().__init__('mybuddy280_robonomics_handler')
 
         # Names of files and core IPFS dir
+        self.srv_send_joint_angle_file_name = 'mybuddy280_srv_send_joints_angles.json'
         self.joints_angles_file_name = 'mybuddy280_joints_angles.json'
         self.ipfs_dir = 'ipfs_files'
 
@@ -43,7 +43,25 @@ class MyBuddy280Robonomics(Node):
         )
         self.subscriber_joints_angles  # prevent unused variable warning
 
+        # Subscription for launch params
+        self.subscriber_launch_param = self.create_subscription(
+            String,
+            'robonomics/launch_param',
+            self.subscriber_launch_param_callback,
+            10,
+            callback_group=subscriber_callback_group,
+        )
+        self.subscriber_launch_param  # prevent unused variable warning
+
         # Creating service clients for IPFS handler
+        self.ipfs_download_client = self.create_client(
+            DownloadFromIPFS,
+            'ipfs/download',
+            callback_group=client_callback_group,
+        )
+        while not self.ipfs_download_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().warn('IPFS handler service not available, waiting again...')
+
         self.ipfs_upload_client = self.create_client(
             UploadToIPFS,
             'ipfs/upload',
@@ -83,6 +101,36 @@ class MyBuddy280Robonomics(Node):
         """
         self.mybuddy280_joints_angles = msg
 
+    def subscriber_launch_param_callback(self, msg):
+        """
+        Method that downloads IPFS file and publishes it content
+        :param msg: string with IPFS cid
+        :return: None
+        """
+        cid = msg.data
+        # Send request to IPFS service
+        response = self.ipfs_download_request(cid, self.srv_send_joint_angle_file_name)
+        self.get_logger().info(response.result)
+
+        # Open file from IPFS
+        file = open(get_package_share_directory('ipfs_handler') + "/" + self.ipfs_dir
+                    + "/" + self.srv_send_joint_angle_file_name)
+        data = json.load(file)
+
+        # Preparing request
+        request = MyBuddy280SendAngles.Request()
+        request.part_id = str(data['part_id'])
+        for i in range(0, len(data['joint_number'])):
+            request.joint_number[i] = int(data['joint_number'][i])
+            request.angle[i] = float(data['angle'][i])
+            request.speed[i] = int(data['speed'][i])
+
+        # Making request
+        future = self.send_joint_angle_client.call_async(request)
+        self.executor.spin_until_future_complete(future)
+
+        self.get_logger().info(future.result().result)
+
     def send_datalog_request(self, datalog_content):
         """
         Request function to send datalog
@@ -92,6 +140,23 @@ class MyBuddy280Robonomics(Node):
         request = RobonomicsROS2SendDatalog.Request()
         request.datalog_content = datalog_content
         future = self.send_datalog_client.call_async(request)
+        self.executor.spin_until_future_complete(future)
+
+        return future.result()
+
+    def ipfs_download_request(self, cid, file_name):
+        """
+        Request function to download IPFS file
+        :param cid: IPFS cid
+        :param file_name: name for file
+        :return: result
+        """
+        # Preparing request
+        request = DownloadFromIPFS.Request()
+        request.cid = cid
+        request.file_name = file_name
+        # Make request and wait for its execution
+        future = self.ipfs_download_client.call_async(request)
         self.executor.spin_until_future_complete(future)
 
         return future.result()
