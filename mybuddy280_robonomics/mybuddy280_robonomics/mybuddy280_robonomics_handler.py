@@ -120,14 +120,19 @@ class MyBuddy280Robonomics(Node):
         # Preparing request
         request = MyBuddy280SendAngles.Request()
         request.part_id = str(data['part_id'])
+        request.joint_number = []
+        request.angle = []
+        request.speed = []
         for i in range(0, len(data['joint_number'])):
-            request.joint_number[i] = int(data['joint_number'][i])
-            request.angle[i] = float(data['angle'][i])
-            request.speed[i] = int(data['speed'][i])
+            request.joint_number.append(int(data['joint_number'][i]))
+            request.angle.append(float(data['angle'][i]))
+            request.speed.append(int(data['speed'][i]))
 
         # Making request
+        self.get_logger().info("Prepearing request to send call for joints")
         future = self.send_joint_angle_client.call_async(request)
         self.executor.spin_until_future_complete(future)
+        self.get_logger().info("After sending joints")
 
         self.get_logger().info(future.result().result)
 
