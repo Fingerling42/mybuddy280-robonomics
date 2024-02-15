@@ -28,9 +28,8 @@ class MyBuddy280Robonomics(Node):
         self.ipfs_dir = 'ipfs_files'
 
         # Callback groups that prohibits async calls of callback functions
-        subscriber_callback_group = MutuallyExclusiveCallbackGroup()
-        client_callback_group = MutuallyExclusiveCallbackGroup()
-        timer_callback_group = MutuallyExclusiveCallbackGroup()
+        launch_callback_group = MutuallyExclusiveCallbackGroup()
+        datalog_callback_group = MutuallyExclusiveCallbackGroup()
 
         # Subscription for myBuddy280 joint angles data
         self.mybuddy280_joints_angles = MyBuddy280Angles()
@@ -39,7 +38,6 @@ class MyBuddy280Robonomics(Node):
             'myBuddy280/joints/angles',
             self.subscriber_joints_angles_callback,
             qos_profile=qos_profile_sensor_data,
-            callback_group=subscriber_callback_group,
         )
         self.subscriber_joints_angles  # prevent unused variable warning
 
@@ -49,7 +47,6 @@ class MyBuddy280Robonomics(Node):
             'robonomics/launch_param',
             self.subscriber_launch_param_callback,
             10,
-            callback_group=subscriber_callback_group,
         )
         self.subscriber_launch_param  # prevent unused variable warning
 
@@ -57,7 +54,7 @@ class MyBuddy280Robonomics(Node):
         self.ipfs_download_client = self.create_client(
             DownloadFromIPFS,
             'ipfs/download',
-            callback_group=client_callback_group,
+            callback_group=launch_callback_group,
         )
         while not self.ipfs_download_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('IPFS handler service not available, waiting again...')
@@ -65,7 +62,7 @@ class MyBuddy280Robonomics(Node):
         self.ipfs_upload_client = self.create_client(
             UploadToIPFS,
             'ipfs/upload',
-            callback_group=client_callback_group,
+            callback_group=datalog_callback_group,
         )
         while not self.ipfs_upload_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('IPFS handler service not available, waiting again...')
@@ -74,14 +71,14 @@ class MyBuddy280Robonomics(Node):
         self.send_datalog_client = self.create_client(
             RobonomicsROS2SendDatalog,
             'robonomics/send_datalog',
-            callback_group=client_callback_group,
+            callback_group=datalog_callback_group,
         )
 
         # Client for sending angles to robot
         self.send_joint_angle_client = self.create_client(
             MyBuddy280SendAngles,
             'myBuddy280/send_joint_angles',
-            callback_group=client_callback_group,
+            callback_group=launch_callback_group,
         )
         while not self.send_joint_angle_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('myBuddy 280 service for sending angles is not available, waiting again...')
@@ -90,7 +87,6 @@ class MyBuddy280Robonomics(Node):
         self.timer_joints_angles = self.create_timer(
             60,
             self.timer_joints_angles_callback,
-            callback_group=timer_callback_group,
         )
 
     def subscriber_joints_angles_callback(self, msg):
@@ -129,10 +125,8 @@ class MyBuddy280Robonomics(Node):
             request.speed.append(int(data['speed'][i]))
 
         # Making request
-        self.get_logger().info("Prepearing request to send call for joints")
         future = self.send_joint_angle_client.call_async(request)
         self.executor.spin_until_future_complete(future)
-        self.get_logger().info("After sending joints")
 
         self.get_logger().info(future.result().result)
 
