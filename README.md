@@ -92,9 +92,10 @@ For convenience, the project is divided into several ROS 2 packages:
 
 Make sure you have the following software installed on myBuddy 280: 
 
-* Linux OS distribution (tested on [Ubuntu 20.04.4](https://releases.ubuntu.com/focal/))
-* ROS 2 distribution (tested on [Galactic version](https://docs.ros.org/en/galactic/Installation.html))
+* Linux OS distribution (tested on [Ubuntu 22.04.3](https://releases.ubuntu.com/jammy/))
+* ROS 2 distribution (tested on [Humble version](https://docs.ros.org/en/humble/Installation.html))
 * [Python 3](https://www.python.org/downloads/) (tested on 3.8.10)
+* pymycobot, Python API for ElephantRobotics product (tested on [3.3.9](https://pypi.org/project/pymycobot/))
 * A [Robonomics ROS 2 wrapper](https://github.com/Fingerling42/robonomics-ros2) package and all its required software (especially IPFS)
 
 You also need to create an account on Robonomics parachain and write down seed phrase and account type. Make sure, 
